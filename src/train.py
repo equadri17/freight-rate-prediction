@@ -19,9 +19,16 @@ VALIDATION_PATH = DATA_DIR / "validation.csv"
 TEMPLATE_PATH = DATA_DIR / "validation_predictions_template.csv"
 DECEMBER_PATH = DATA_DIR / "december_chart_inputs.csv"
 
-VALIDATION_OUTPUT = ROOT / "validation_predictions.csv"
-DECEMBER_OUTPUT = ROOT / "december_chart_inputs_completed.csv"
+OUTPUT_DIR = ROOT / "outputs"
+OUTPUT_DIR.mkdir(exist_ok=True)
 
+VALIDATION_OUTPUT = (
+    OUTPUT_DIR / "validation_predictions.csv"
+)
+
+DECEMBER_OUTPUT = (
+    OUTPUT_DIR / "december_predictions.csv"
+)
 
 def train_final_model(
     X_full,
