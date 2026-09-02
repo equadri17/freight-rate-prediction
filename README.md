@@ -1,5 +1,5 @@
 Freight Rate Prediction
-
+ 
 Machine Learning system for predicting freight/shipping rates using historical load, route, distance, equipment, weight, market, and quote-related features.
 
  Project Overview
