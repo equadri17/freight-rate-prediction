@@ -1,8 +1,9 @@
-Freight Rate Prediction
- 
+🚚 Freight Rate Prediction
+
 Machine Learning system for predicting freight/shipping rates using historical load, route, distance, equipment, weight, market, and quote-related features.
 
- Project Overview
+
+📌 Project Overview
 
 Freight pricing varies significantly depending on factors such as transportation distance, pickup and delivery locations, equipment type, shipment weight, market conditions, and quote signals.
 
@@ -19,8 +20,7 @@ Log-transformed target modeling
 Validation prediction generation
 December daily rate forecasting
 Model evaluation and output validation
-
- Objective
+🎯 Objective
 
 The main objective is to predict:
 
@@ -47,8 +47,7 @@ market_index	Market condition indicator
 quote_signal	Quote-related signal
 Target
 posted_rate
-
- Exploratory Data Analysis
+🔎 Exploratory Data Analysis
 
 The analysis investigated:
 
@@ -68,7 +67,7 @@ One of the strongest relationships observed was between distance and posted rate
 
 This indicates that shipment distance is an important predictor of freight pricing.
 
- Feature Engineering
+🛠️ Feature Engineering
 
 Several additional features were created to help the model capture nonlinear relationships and temporal patterns.
 
@@ -107,7 +106,7 @@ pickup_delivery
 
 This allows the model to learn route-specific pricing patterns.
 
-  Models Evaluated
+🤖 Models Evaluated
 
 Multiple approaches were compared using a chronological holdout set.
 
@@ -120,7 +119,7 @@ CatBoost — Log Target	108.68	646.50	0.821
 
 The metrics above come from the development/chronological holdout evaluation and are separate from the final unlabeled validation prediction set.
 
-  Final Model
+🏆 Final Model
 
 The final model uses:
 
@@ -145,7 +144,7 @@ np.expm1(prediction)
 
 This log-target approach produced substantially better MAE than the raw-target version during development validation.
 
-  Validation Strategy
+⏱️ Validation Strategy
 
 Because freight rates can change over time, a random train/test split can introduce unrealistic information leakage.
 
@@ -162,7 +161,7 @@ Train on historical loads → predict future loads.
 
 The final assessment validation dataset contains 12,000 loads for which the target rate is not provided.
 
- December Forecast
+📊 December Forecast
 
 The project also generates daily freight-rate predictions for a fixed shipment scenario across December.
 
@@ -180,7 +179,7 @@ December 1 → December 31
 
 The resulting visualization is available here:
 
-  Project Structure
+🗂️ Project Structure
 freight-rate-prediction/
 │
 ├── README.md
@@ -214,8 +213,7 @@ freight-rate-prediction/
 │
 └── reports/
     └── Freight_Rate_Prediction_Report.pdf
-
- Getting Started
+🚀 Getting Started
 1. Clone the repository
 git clone https://github.com/equadri17/freight-rate-prediction.git
 cd freight-rate-prediction
@@ -235,7 +233,7 @@ python src/train.py
 
 The pipeline performs feature engineering, trains the CatBoost model, generates predictions, and validates the resulting outputs.
 
-  Results
+📈 Results
 
 The model achieved the following development holdout performance:
 
@@ -250,7 +248,7 @@ Model MAE    : 108.68
 
 This demonstrates a substantial improvement over a simple baseline and shows that shipment and market-related features contain strong predictive information for freight pricing.
 
- Data & Reproducibility
+⚠️ Data & Reproducibility
 
 The project uses structured freight-load data containing shipment, geographic, equipment, market, and pricing information.
 
@@ -258,7 +256,7 @@ Some datasets and assessment materials may be subject to their original usage or
 
 For a public portfolio repository, sensitive or restricted data should be removed or replaced with an appropriate sample dataset.
 
- Future Improvements
+🔮 Future Improvements
 
 Potential improvements include:
 
@@ -273,14 +271,12 @@ Docker containerization
 Interactive web dashboard
 Cloud deployment
 Automated CI/CD pipeline
- 
-  Detailed Report
+📄 Detailed Report
 
 A detailed project report covering the methodology, analysis, feature engineering, model experiments, evaluation, and results is available in:
 
 reports/Freight_Rate_Prediction_Report.pdf
- 
-  Author
+👨‍💻 Author
 
 Sayyad Emad Husain Quadri
 
@@ -293,10 +289,3 @@ Artificial Intelligence
 Data Science
 Cloud Computing
 Software Engineering
-
-The fixed December chart is:
-
-scorer_results/candidate_december.png
-Author
-
-Sayyad Emad Husain Quadri
