@@ -1,229 +1,298 @@
-# Freight Rate Prediction
+Freight Rate Prediction
 
-Machine learning solution for the Freight Rate Prediction Challenge.
+Machine Learning system for predicting freight/shipping rates using historical load, route, distance, equipment, weight, market, and quote-related features.
 
-The objective is to predict the freight rate (`posted_rate`) for unseen freight loads using the provided labeled development data.
+ Project Overview
 
-## Project Overview
+Freight pricing varies significantly depending on factors such as transportation distance, pickup and delivery locations, equipment type, shipment weight, market conditions, and quote signals.
 
-This project covers:
+This project develops an end-to-end freight rate prediction pipeline that learns pricing patterns from historical shipment data and predicts the expected posted freight rate for new loads.
 
-- Exploratory Data Analysis (EDA)
-- Data-quality analysis
-- Feature engineering
-- Chronological train/validation splitting
-- Regression model comparison
-- CatBoost target transformation
-- Hyperparameter tuning
-- Final model training
-- Prediction of 12,000 validation loads
-- Prediction of the fixed December scenario
-- Validation using the provided `score.py`
+The project covers:
 
-## Dataset
+Data exploration and quality analysis
+Feature engineering
+Baseline and machine learning model comparison
+Chronological validation
+CatBoost regression
+Log-transformed target modeling
+Validation prediction generation
+December daily rate forecasting
+Model evaluation and output validation
 
-The assessment provides:
+ Objective
 
-- `train_test.csv` — labeled development data
-- `validation.csv` — 12,000 loads requiring predictions
-- `validation_predictions_template.csv` — prediction template
-- `december_chart_inputs.csv` — fixed December prediction scenario
+The main objective is to predict:
 
-The assessment data is not included in this repository.
-
-Place the provided files in:
-
-```text
-data/
-├── train_test.csv
-├── validation.csv
-├── validation_predictions_template.csv
-└── december_chart_inputs.csv
-Data
-
-The development dataset contains the following fields:
-
-load_id
-pickup
-delivery
-pickup_lat
-pickup_lon
-delivery_lat
-delivery_lon
-distance
-equipment
-weight
-date
-market_index
-quote_signal
 posted_rate
 
-posted_rate is the prediction target.
+for a freight load based on information available about the shipment.
 
-Data Quality
+Input Features
 
-Missing numerical values were found in:
+The dataset contains information such as:
 
-weight
-market_index
+Feature	Description
+pickup	Pickup location
+delivery	Delivery location
+pickup_lat	Pickup latitude
+pickup_lon	Pickup longitude
+delivery_lat	Delivery latitude
+delivery_lon	Delivery longitude
+distance	Shipment distance
+equipment	Equipment type
+weight	Shipment weight
+date	Load date
+market_index	Market condition indicator
+quote_signal	Quote-related signal
+Target
+posted_rate
 
-The selected CatBoost model can handle missing numerical values natively, so these observations were retained rather than removed.
+ Exploratory Data Analysis
 
-The categorical fields:
+The analysis investigated:
 
-pickup
-delivery
-equipment
+Dataset dimensions and column types
+Missing values
+Duplicate records
+Numerical feature distributions
+Categorical variables
+Target distribution
+Correlations between numerical variables
+Relationship between distance and freight rate
+Time-based patterns
 
-did not contain missing values in the inspected training and validation data.
+One of the strongest relationships observed was between distance and posted rate, with a correlation of approximately:
 
-Validation Strategy
+0.9085
 
-A chronological validation strategy was used.
+This indicates that shipment distance is an important predictor of freight pricing.
 
-The development data was ordered by date and divided into an earlier training period and a later validation period.
+ Feature Engineering
 
-This approach was chosen to better represent the real prediction setting, where the model is trained on historical loads and used to predict future loads.
+Several additional features were created to help the model capture nonlinear relationships and temporal patterns.
 
-Feature Engineering
+Date Features
 
-The modeling pipeline uses the original numerical and categorical load attributes together with engineered features derived from the date and route information.
+From the original date column:
 
-Feature engineering includes:
+year
+month
+day
+dayofweek
+dayofyear
+weekofyear
 
-Date components
-Day-of-week information
-Day-of-year information
-Cyclical date features
-Distance transformations
-Weight transformations
-Weight-to-distance relationships
-Pickup-delivery route information
+Cyclical features were also created:
 
-The same feature-engineering logic is applied to the development, validation and December prediction data.
+sin_doy
+cos_doy
+sin_dow
+cos_dow
 
-Model Experiments
+These allow the model to represent recurring seasonal and weekly patterns.
 
-Several models were evaluated using the same chronological validation approach.
+Distance Features
+distance_log
+distance_sq
+Weight Features
+weight_log
+Interaction Feature
+weight_distance_ratio
+Route Feature
+
+A route identifier was created from pickup and delivery locations:
+
+pickup_delivery
+
+This allows the model to learn route-specific pricing patterns.
+
+  Models Evaluated
+
+Multiple approaches were compared using a chronological holdout set.
 
 Model	MAE	RMSE	R²
-Ridge Regression	410.82	782.83	0.7377
-Random Forest	188.51	704.23	0.7877
-CatBoost — Raw Target	140.00	649.57	0.8194
-CatBoost — Log Target	108.68	646.50	0.8211
+Median Baseline	1146.79	1567.97	-0.052
+Ridge Regression	410.82	782.83	0.738
+Random Forest	188.51	704.23	0.788
+CatBoost — Raw Target	140.00	649.57	0.819
+CatBoost — Log Target	108.68	646.50	0.821
 
-CatBoost with a log-transformed target produced substantially better validation performance than the linear and Random Forest baselines.
+The metrics above come from the development/chronological holdout evaluation and are separate from the final unlabeled validation prediction set.
 
-Final Model
+  Final Model
 
-The final model uses CatBoostRegressor with the target transformed using:
+The final model uses:
+
+CatBoostRegressor
+
+with the following configuration:
+
+Iterations:      300
+Depth:            6
+Learning Rate:    0.05
+L2 Regularization: 5
+Loss Function:    RMSE
+Random Seed:      42
+
+The target was transformed using:
 
 np.log1p(posted_rate)
 
-The selected hyperparameters are:
-
-iterations     = 300
-depth          = 6
-learning_rate  = 0.05
-l2_leaf_reg    = 5
-random_seed    = 42
-
-The log predictions are converted back to the original rate scale using:
+Predictions were converted back to the original rate scale using:
 
 np.expm1(prediction)
-Final Validation Performance
 
-Using the chronological validation set, the selected configuration achieved:
+This log-target approach produced substantially better MAE than the raw-target version during development validation.
 
-MAE  = 107.70
-RMSE = 648.20
-R²   = 0.8202
+  Validation Strategy
 
-The model was then retrained using the complete labeled development dataset before generating the final 12,000 validation predictions.
+Because freight rates can change over time, a random train/test split can introduce unrealistic information leakage.
 
-Installation
+Instead, the project uses chronological validation.
 
-Python 3.10+ is recommended.
+The development data was divided using:
 
-Install the project dependencies:
+Training data:  Before October 2025
+Holdout data:   October 2025 onward
 
-python -m pip install -r requirements.txt
-Requirements
+This provides a more realistic approximation of the problem:
 
-The required Python packages are listed in:
+Train on historical loads → predict future loads.
 
-requirements.txt
+The final assessment validation dataset contains 12,000 loads for which the target rate is not provided.
 
-The main dependencies are:
+ December Forecast
 
-pandas
-numpy
-matplotlib
-scikit-learn
-catboost
-Running the Model
+The project also generates daily freight-rate predictions for a fixed shipment scenario across December.
 
-Place the assessment data in the data/ directory and run:
+The scenario contains:
 
-python src/train.py
+Pickup:       Lexington
+Delivery:     Fort Wayne
+Distance:     360
+Equipment:    Dry Van
+Weight:       32,000
 
-The script generates:
+Predictions are generated for:
 
-validation_predictions.csv
-december_chart_inputs_completed.csv
-Validating the Predictions
+December 1 → December 31
 
-Run the provided assessment scorer:
+The resulting visualization is available here:
 
-python score.py \
-    --predictions validation_predictions.csv \
-    --december-predictions december_chart_inputs_completed.csv
-
-The scorer validates:
-
-12,000 validation predictions
-Required validation load_id values
-Positive prediction values
-31 December predictions
-December dates from December 1 through December 31, 2025
-Fixed December scenario inputs
-
-The scorer creates:
-
-scorer_results/candidate_december.png
-
-The provided scorer confirms that the final validation metrics are calculated by Spotter after submission.
-
-Repository Structure
+  Project Structure
 freight-rate-prediction/
 │
 ├── README.md
 ├── requirements.txt
-├── score.py
+├── LICENSE
+├── .gitignore
 │
-├── src/
-│   └── train.py
+├── data/
+│   ├── train_test.csv
+│   ├── validation.csv
+│   ├── validation_predictions_template.csv
+│   ├── december_chart_inputs.csv
+│   └── README.md
 │
 ├── notebooks/
 │   └── freight_rate_analysis.ipynb
 │
-└── scorer_results/
-    └── candidate_december.png
-Reproducibility
+├── src/
+│   ├── features.py
+│   ├── train.py
+│   ├── predict.py
+│   └── evaluate.py
+│
+├── models/
+│   └── README.md
+│
+├── outputs/
+│   ├── validation_predictions.csv
+│   ├── december_predictions.csv
+│   └── candidate_december.png
+│
+└── reports/
+    └── Freight_Rate_Prediction_Report.pdf
 
-The notebook contains the exploratory analysis, model experiments and validation results.
+ Getting Started
+1. Clone the repository
+git clone https://github.com/equadri17/freight-rate-prediction.git
+cd freight-rate-prediction
+2. Create a virtual environment
+python -m venv venv
 
-The src/train.py script contains the final reproducible training and prediction pipeline.
+Activate it:
 
-Assessment Outputs
+Windows
+venv\Scripts\activate
+Linux / macOS
+source venv/bin/activate
+3. Install dependencies
+pip install -r requirements.txt
+4. Train the model
+python src/train.py
 
-The final submission includes:
+The pipeline performs feature engineering, trains the CatBoost model, generates predictions, and validates the resulting outputs.
 
-validation_predictions.csv
+  Results
 
-with exactly:
+The model achieved the following development holdout performance:
 
-load_id,predicted_rate
+MAE  : 108.68
+RMSE : 646.50
+R²   : 0.821
+
+Compared with the median baseline:
+
+Baseline MAE : 1146.79
+Model MAE    : 108.68
+
+This demonstrates a substantial improvement over a simple baseline and shows that shipment and market-related features contain strong predictive information for freight pricing.
+
+ Data & Reproducibility
+
+The project uses structured freight-load data containing shipment, geographic, equipment, market, and pricing information.
+
+Some datasets and assessment materials may be subject to their original usage or distribution restrictions. Please verify that you have permission to publicly redistribute any data or assessment materials before publishing them.
+
+For a public portfolio repository, sensitive or restricted data should be removed or replaced with an appropriate sample dataset.
+
+ Future Improvements
+
+Potential improvements include:
+
+Hyperparameter optimization
+More extensive time-series validation
+Route-level historical pricing features
+Geographic distance engineering
+Prediction uncertainty estimation
+Model monitoring
+FastAPI prediction service
+Docker containerization
+Interactive web dashboard
+Cloud deployment
+Automated CI/CD pipeline
+ 
+  Detailed Report
+
+A detailed project report covering the methodology, analysis, feature engineering, model experiments, evaluation, and results is available in:
+
+reports/Freight_Rate_Prediction_Report.pdf
+ 
+  Author
+
+Sayyad Emad Husain Quadri
+
+B.Tech — Information Technology
+
+Interested in:
+
+Machine Learning
+Artificial Intelligence
+Data Science
+Cloud Computing
+Software Engineering
 
 The fixed December chart is:
 
